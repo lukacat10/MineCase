@@ -136,7 +136,7 @@ namespace MineCase
 
         private static unsafe string ToString(ReadOnlySpan<char> span)
         {
-            return new string((char*)Unsafe.AsPointer(ref span.DangerousGetPinnableReference()), 0, span.Length);
+            return span.ToString();
         }
     }
 

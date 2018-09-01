@@ -1,15 +1,17 @@
 ﻿using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 
 using MineCase.Nbt;
 
 namespace MineCase.Serialization
 {
-    public struct SpanReader
+    public ref struct SpanReader
     {
         private ReadOnlySpan<byte> _span;
 
@@ -53,81 +55,83 @@ namespace MineCase.Serialization
         {
             var len = ReadAsVarInt(out _);
             var bytes = ReadBytes((int)len);
-            return Encoding.UTF8.GetString((byte*)Unsafe.AsPointer(ref bytes.DangerousGetPinnableReference()), bytes.Length);
+            return Encoding.UTF8.GetString((byte*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(bytes)), bytes.Length);
         }
 
         public ushort ReadAsUnsignedShort()
         {
-            var value = _span.ReadBigEndian<ushort>();
+            var value = BinaryPrimitives.ReadUInt16BigEndian(_span);
             Advance(sizeof(ushort));
             return value;
         }
 
         public uint ReadAsUnsignedInt()
         {
-            var value = _span.ReadBigEndian<uint>();
+            var value = BinaryPrimitives.ReadUInt32BigEndian(_span);
             Advance(sizeof(uint));
             return value;
         }
 
         public ulong ReadAsUnsignedLong()
         {
-            var value = _span.ReadBigEndian<ulong>();
+            var value = BinaryPrimitives.ReadUInt64BigEndian(_span);
             Advance(sizeof(ulong));
             return value;
         }
 
         public int ReadAsInt()
         {
-            var value = _span.ReadBigEndian<int>();
+            var value = BinaryPrimitives.ReadInt32BigEndian(_span);
             Advance(sizeof(int));
             return value;
         }
 
         public long ReadAsLong()
         {
-            var value = _span.ReadBigEndian<long>();
+            var value = BinaryPrimitives.ReadInt64BigEndian(_span);
             Advance(sizeof(long));
             return value;
         }
 
         public byte PeekAsByte()
         {
-            var value = _span.ReadBigEndian<byte>();
+            var value = _span[0];
             return value;
         }
 
         public byte ReadAsByte()
         {
-            var value = _span.ReadBigEndian<byte>();
+            var value = _span[0];
             Advance(sizeof(byte));
             return value;
         }
 
         public bool ReadAsBoolean()
         {
-            var value = _span.ReadBigEndian<bool>();
+            var value = _span[0] == 1;
             Advance(sizeof(bool));
             return value;
         }
 
         public short ReadAsShort()
         {
-            var value = _span.ReadBigEndian<short>();
+            var value = BinaryPrimitives.ReadInt16BigEndian(_span);
             Advance(sizeof(short));
             return value;
         }
 
         public float ReadAsFloat()
         {
-            var value = _span.ReadBigEndian<float>();
+            var ivalue = BinaryPrimitives.ReadUInt32BigEndian(_span);
+            var value = Unsafe.As<uint, float>(ref ivalue);
             Advance(sizeof(float));
             return value;
         }
 
         public double ReadAsDouble()
         {
-            var value = _span.ReadBigEndian<double>();
+            var ivalue = BinaryPrimitives.ReadUInt64BigEndian(_span);
+            var value = Unsafe.As<ulong, double>(ref ivalue);
             Advance(sizeof(double));
             return value;
         }
@@ -147,8 +151,7 @@ namespace MineCase.Serialization
 
         public Position ReadAsPosition()
         {
-            var value = _span.ReadBigEndian<ulong>();
-            Advance(sizeof(ulong));
+            var value = ReadAsUnsignedLong();
             return new Position
             {
                 X = SignBy26(value >> 38),

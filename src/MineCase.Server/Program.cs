@@ -14,7 +14,6 @@ namespace MineCase.Server
     {
         private static readonly ManualResetEvent _exitEvent = new ManualResetEvent(false);
         private static ISiloHost _siloHost;
-        private static Assembly[] _assemblies;
 
         public static IConfiguration Configuration { get; private set; }
 
@@ -28,11 +27,29 @@ namespace MineCase.Server
 
             var builder = new SiloHostBuilder()
                 .ConfigureLogging(ConfigureLogging)
-                .UseConfiguration(LoadClusterConfiguration())
+                .UseLocalhostClustering()
+                .AddSimpleMessageStreamProvider("JobsProvider")
+                .AddSimpleMessageStreamProvider("TransientProvider")
                 .UseDashboard()
+                .ConfigureApplicationParts(parts =>
+                {
+                    foreach (var assembly in SelectAssemblies())
+                        parts.AddApplicationPart(assembly);
+                })
+                .UseMongoDBReminders(c =>
+                {
+                    c.ConnectionString = Configuration.GetSection("persistenceOptions")["connectionString"];
+                })
+                .AddMongoDBGrainStorageAsDefault(c=>
+                {
+                    c.ConnectionString = Configuration.GetSection("persistenceOptions")["connectionString"];
+                })
+                .AddMongoDBGrainStorage("PubSubStore", c =>
+                {
+                    c.ConnectionString = Configuration.GetSection("persistenceOptions")["connectionString"];
+                })
                 .UseServiceProviderFactory(ConfigureServices);
-            SelectAssemblies();
-            ConfigureApplicationParts(builder);
+
             _siloHost = builder.Build();
             await StartAsync();
             Console.WriteLine("Press Ctrl+C to terminate...");
@@ -48,25 +65,6 @@ namespace MineCase.Server
         {
             Serializers.RegisterAll(_siloHost.Services);
             await _siloHost.StartAsync();
-        }
-
-        private static ClusterConfiguration LoadClusterConfiguration()
-        {
-            var cluster = new ClusterConfiguration();
-            cluster.LoadFromFile("OrleansConfiguration.dev.xml");
-            cluster.RegisterDashboard();
-            cluster.AddMongoDBStorageProvider("PubSubStore", c =>
-            {
-                c.ConnectionString = Configuration.GetSection("persistenceOptions")["connectionString"];
-                c.UseJsonFormat = true;
-            });
-            return cluster;
-        }
-
-        private static void ConfigureApplicationParts(ISiloHostBuilder builder)
-        {
-            foreach (var assembly in _assemblies)
-                builder.AddApplicationPart(assembly);
         }
     }
 }

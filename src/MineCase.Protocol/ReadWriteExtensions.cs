@@ -2,10 +2,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Buffers;
+using System.Buffers.Binary;
 using System.Runtime;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using static System.Buffers.Binary.BinaryPrimitives;
 
 #pragma warning disable
 
@@ -71,32 +71,6 @@ namespace System.IO.Pipelines
                 }
                 return Unsafe.Read<T>(val);
             }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static T ReadBigEndian<T>(this ReadOnlySpan<byte> buffer) where T : struct
-            => BitConverter.IsLittleEndian ? Reverse(ReadMachineEndian<T>(buffer)) : ReadMachineEndian<T>(buffer);
-
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static T ReadLittleEndian<T>(this ReadOnlySpan<byte> buffer) where T : struct
-            => BitConverter.IsLittleEndian ? ReadMachineEndian<T>(buffer) : Reverse(ReadMachineEndian<T>(buffer));
-
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void WriteBigEndian<T>(this Span<byte> buffer, T value) where T : struct
-        {
-            if (BitConverter.IsLittleEndian)
-                value = Reverse(value);
-            WriteMachineEndian(buffer, ref value);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void WriteLittleEndian<T>(this Span<byte> buffer, T value) where T : struct
-        {
-            if (!BitConverter.IsLittleEndian)
-                value = Reverse(value);
-            WriteMachineEndian(buffer, ref value);
         }
     }
 }

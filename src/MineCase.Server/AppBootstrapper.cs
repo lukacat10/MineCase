@@ -26,7 +26,7 @@ namespace MineCase.Server
 
             var container = new ContainerBuilder();
             container.Populate(services);
-            container.RegisterAssemblyModules(_assemblies);
+            container.RegisterAssemblyModules(SelectAssemblies().ToArray());
             return new AutofacServiceProvider(container.Build());
         }
 
@@ -36,14 +36,15 @@ namespace MineCase.Server
                 .AddJsonFile("config.json", false, false);
         }
 
-        private static void SelectAssemblies()
+        private static IEnumerable<Assembly> SelectAssemblies()
         {
             var assemblies = new List<Assembly>();
             assemblies
                 .AddEngine()
                 .AddInterfaces()
                 .AddGrains();
-            _assemblies = assemblies.ToArray();
+            assemblies.Add(typeof(Orleans.Providers.MongoDB.StorageProviders.MongoGrainStorage).Assembly);
+            return assemblies;
         }
 
         private static void ConfigureLogging(ILoggingBuilder loggingBuilder)

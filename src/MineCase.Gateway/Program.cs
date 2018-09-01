@@ -18,7 +18,10 @@ namespace MineCase.Gateway
 
         private static IClusterClient _clusterClient;
         private static readonly ManualResetEvent _exitEvent = new ManualResetEvent(false);
-        private static Assembly[] _assemblies;
+        private static ILogger _logger;
+
+        private const int _initializeAttemptsBeforeFailing = 5;
+        private static int _attempt = 0;
 
         static void Main(string[] args)
         {
@@ -31,44 +34,54 @@ namespace MineCase.Gateway
 
         private static void ConfigureApplicationParts(IClientBuilder builder)
         {
-            foreach (var assembly in _assemblies)
-                builder.AddApplicationPart(assembly);
+            builder.ConfigureApplicationParts(mgr =>
+            {
+            });
         }
 
         private static async void Startup()
         {
-            ILogger logger = null;
+            _clusterClient = new ClientBuilder()
+                .UseLocalhostClustering()
+                .ConfigureServices(ConfigureServices)
+                .ConfigureLogging(ConfigureLogging)
+                .ConfigureApplicationParts(parts =>
+                {
+                    foreach (var assembly in SelectAssemblies())
+                        parts.AddApplicationPart(assembly);
+                }).Build();
 
-            var retryPolicy = Policy.Handle<OrleansException>()
-                .WaitAndRetryForeverAsync(
-                    retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
-                    (ex, timeSpan) => logger?.LogError($"Cluster connection failed. Next retry: {timeSpan.TotalSeconds} secs later."));
-            await retryPolicy.ExecuteAsync(async () =>
-            {
-                _clusterClient?.Dispose();
-                var builder = new ClientBuilder()
-                    .LoadConfiguration("OrleansConfiguration.dev.xml")
-                    .ConfigureServices(ConfigureServices)
-                    .ConfigureLogging(ConfigureLogging);
-                SelectAssemblies();
-                ConfigureApplicationParts(builder);
-                _clusterClient = builder.Build();
+            var serviceProvider = _clusterClient.ServiceProvider;
+            _logger = _clusterClient.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger<Program>();
 
-                var serviceProvider = _clusterClient.ServiceProvider;
-                logger = _clusterClient.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger<Program>();
-
-                await Connect(logger);
-            });
+            await Connect();
 
             var connectionRouter = _clusterClient.ServiceProvider.GetRequiredService<ConnectionRouter>();
             await connectionRouter.Startup(default(CancellationToken));
         }
 
-        private static async Task Connect(ILogger logger)
+        private static async Task Connect()
         {
-            logger.LogInformation("Connecting to cluster...");
-            await _clusterClient.Connect();
-            logger.LogInformation("Connected to cluster.");
+            _logger.LogInformation("Connecting to cluster...");
+            await _clusterClient.Connect(RetryFilter);
+            _logger.LogInformation("Connected to cluster.");
+        }
+
+        private static async Task<bool> RetryFilter(Exception exception)
+        {
+            if (exception.GetType() != typeof(SiloUnavailableException))
+            {
+                _logger.LogError($"Cluster client failed to connect to cluster with unexpected error.  Exception: {exception}");
+                return false;
+            }
+            _attempt++;
+            _logger.LogWarning($"Cluster client attempt {_attempt} of {_initializeAttemptsBeforeFailing} failed to connect to cluster.  Exception: {exception}");
+            if (_attempt > _initializeAttemptsBeforeFailing)
+            {
+                return false;
+            }
+            await Task.Delay(TimeSpan.FromSeconds(4));
+            return true;
         }
     }
 }

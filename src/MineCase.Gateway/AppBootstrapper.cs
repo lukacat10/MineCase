@@ -49,12 +49,12 @@ namespace MineCase.Gateway
             loggingBuilder.AddConsole();
         }
 
-        private static void SelectAssemblies()
+        private static IEnumerable<Assembly> SelectAssemblies()
         {
             var assemblies = new List<Assembly>();
             assemblies
                 .AddInterfaces();
-            _assemblies = assemblies.ToArray();
+            return assemblies;
         }
     }
 }

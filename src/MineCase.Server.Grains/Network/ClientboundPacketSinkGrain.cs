@@ -13,7 +13,7 @@ namespace MineCase.Server.Network
 {
     internal class ClientboundPacketSinkGrain : Grain, IClientboundPacketSink
     {
-        private ObserverSubscriptionManager<IClientboundPacketObserver> _subsManager;
+        private List<IClientboundPacketObserver> _observers;
         private readonly IPacketPackager _packetPackager;
 
         public ClientboundPacketSinkGrain(IPacketPackager packetPackager)
@@ -23,21 +23,21 @@ namespace MineCase.Server.Network
 
         public override Task OnActivateAsync()
         {
-            _subsManager = new ObserverSubscriptionManager<IClientboundPacketObserver>();
+            _observers = new List<IClientboundPacketObserver>();
             return base.OnActivateAsync();
         }
 
         // Clients call this to subscribe.
         public Task Subscribe(IClientboundPacketObserver observer)
         {
-            _subsManager.Subscribe(observer);
+            _observers.Add(observer);
             return Task.CompletedTask;
         }
 
         // Also clients use this to unsubscribe themselves to no longer receive the messages.
         public Task UnSubscribe(IClientboundPacketObserver observer)
         {
-            _subsManager.Unsubscribe(observer);
+            _observers.Remove(observer);
             return Task.CompletedTask;
         }
 
@@ -54,24 +54,24 @@ namespace MineCase.Server.Network
                 PacketId = packetId,
                 Data = new ArraySegment<byte>(data.Value)
             };
-            if (_subsManager.Count == 0)
+            if (_observers.Count == 0)
                 DeactivateOnIdle();
             else
-                _subsManager.Notify(n => n.ReceivePacket(packet));
+                _observers.ForEach(n => n.ReceivePacket(packet));
             return Task.CompletedTask;
         }
 
         public Task Close()
         {
-            _subsManager.Notify(n => n.OnClosed());
-            _subsManager.Clear();
+            _observers.ForEach(n => n.OnClosed());
+            _observers.Clear();
             DeactivateOnIdle();
             return Task.CompletedTask;
         }
 
         public Task NotifyUseCompression(uint threshold)
         {
-            _subsManager.Notify(n => n.UseCompression(threshold));
+            _observers.ForEach(n => n.UseCompression(threshold));
             return Task.CompletedTask;
         }
     }
