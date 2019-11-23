@@ -363,14 +363,14 @@ namespace MineCase.Server.Network.Play
             });
         }
 
-        public Task PlayerListItemAddPlayer(IReadOnlyList<PlayerDescription> desc)
+        public Task PlayerInfoAddPlayer(IReadOnlyList<PlayerDescription> desc)
         {
-            return SendPacket(new PlayerListItem<PlayerListItemAddPlayerAction>
+            return SendPacket(new PlayerInfo<PlayerInfoAddPlayerAction>
             {
                 Action = 0,
                 NumberOfPlayers = (uint)desc.Count,
                 Players = (from d in desc
-                           select new PlayerListItemAddPlayerAction
+                           select new PlayerInfoAddPlayerAction
                            {
                                UUID = d.UUID,
                                Name = d.Name,
@@ -382,14 +382,14 @@ namespace MineCase.Server.Network.Play
             });
         }
 
-        public Task PlayerListItemRemovePlayer(IReadOnlyList<Guid> desc)
+        public Task PlayerInfoRemovePlayer(IReadOnlyList<Guid> desc)
         {
-            return SendPacket(new PlayerListItem<PlayerListItemRemovePlayerAction>
+            return SendPacket(new PlayerInfo<PlayerInfoRemovePlayerAction>
             {
                 Action = 4,
                 NumberOfPlayers = (uint)desc.Count,
                 Players = (from d in desc
-                           select new PlayerListItemRemovePlayerAction
+                           select new PlayerInfoRemovePlayerAction
                            {
                                UUID = d
                            }).ToArray()

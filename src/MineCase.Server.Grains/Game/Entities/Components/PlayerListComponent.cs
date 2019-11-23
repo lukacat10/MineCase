@@ -41,7 +41,7 @@ namespace MineCase.Server.Game.Entities.Components
         Task IHandle<PlayerListRemove>.Handle(PlayerListRemove message)
         {
             return AttachedObject.GetComponent<ChunkEventBroadcastComponent>().GetGenerator()
-                .PlayerListItemRemovePlayer((from p in message.Players
+                .PlayerInfoRemovePlayer((from p in message.Players
                                              select p.GetPrimaryKey()).ToList());
         }
 
@@ -50,9 +50,9 @@ namespace MineCase.Server.Game.Entities.Components
             var desc = await Task.WhenAll(from p in players
                                           select p.Ask(AskPlayerDescription.Default));
             await AttachedObject.GetComponent<ClientboundPacketComponent>().GetGenerator()
-                .PlayerListItemAddPlayer(desc);
+                .PlayerInfoAddPlayer(desc);
             await AttachedObject.GetComponent<ChunkEventBroadcastComponent>().GetGenerator()
-                .PlayerListItemAddPlayer(desc);
+                .PlayerInfoAddPlayer(desc);
         }
     }
 }

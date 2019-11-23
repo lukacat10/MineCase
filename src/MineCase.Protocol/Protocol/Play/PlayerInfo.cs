@@ -9,9 +9,9 @@ namespace MineCase.Protocol.Play
 #if !NET46
     [Orleans.Concurrency.Immutable]
 #endif
-    [Packet(0x2D)]
-    public sealed class PlayerListItem<TAction> : ISerializablePacket
-        where TAction : PlayerListItemAction
+    [Packet(0x33)]
+    public sealed class PlayerInfo<TAction> : ISerializablePacket
+        where TAction : PlayerInfoAction
     {
         [SerializeAs(DataType.VarInt)]
         public uint Action;
@@ -31,7 +31,7 @@ namespace MineCase.Protocol.Play
         }
     }
 
-    public abstract class PlayerListItemAction : ISerializablePacket
+    public abstract class PlayerInfoAction : ISerializablePacket
     {
         [SerializeAs(DataType.UUID)]
         public Guid UUID;
@@ -42,7 +42,7 @@ namespace MineCase.Protocol.Play
         }
     }
 
-    public sealed class PlayerListItemAddPlayerAction : PlayerListItemAction
+    public sealed class PlayerInfoAddPlayerAction : PlayerInfoAction
     {
         [SerializeAs(DataType.String)]
         public string Name;
@@ -76,7 +76,7 @@ namespace MineCase.Protocol.Play
         }
     }
 
-    public sealed class PlayerListItemRemovePlayerAction : PlayerListItemAction
+    public sealed class PlayerInfoRemovePlayerAction : PlayerInfoAction
     {
     }
 }
