@@ -9,7 +9,7 @@ namespace MineCase.Protocol.Play
 #if !NET46
     [Orleans.Concurrency.Immutable]
 #endif
-    [Packet(0x2E)]
+    [Packet(0x35)]
     public sealed class ClientboundPositionAndLook : ISerializablePacket
     {
         [SerializeAs(DataType.Double)]
