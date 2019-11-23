@@ -266,16 +266,16 @@ namespace MineCase.Server.Network.Play
             }
         }
 
-        public Task JoinGame(uint eid, GameMode gameMode, Dimension dimension, Difficulty difficulty, byte maxPlayers, string levelType, bool reducedDebugInfo)
+        public Task JoinGame(uint eid, GameMode gameMode, Dimension dimension, byte maxPlayers, string levelType, uint viewDistance, bool reducedDebugInfo)
         {
             return SendPacket(new JoinGame
             {
                 EID = (int)eid,
                 GameMode = ToByte(gameMode),
                 Dimension = (int)dimension,
-                Difficulty = (byte)difficulty,
                 LevelType = levelType,
                 MaxPlayers = maxPlayers,
+                ViewDistance = viewDistance,
                 ReducedDebugInfo = reducedDebugInfo
             });
         }

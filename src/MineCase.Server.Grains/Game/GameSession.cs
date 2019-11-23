@@ -70,9 +70,9 @@ namespace MineCase.Server.Game
                 await (await user.GetPlayer()).GetEntityId(),
                 await user.GetGameMode(),
                 Dimension.Overworld,
-                Difficulty.Easy,
                 (byte)settings.MaxPlayers,
                 LevelTypes.Default,
+                settings.ViewDistance,
                 false);
             await user.NotifyLoggedIn();
             await SendWholePlayersList(user);
