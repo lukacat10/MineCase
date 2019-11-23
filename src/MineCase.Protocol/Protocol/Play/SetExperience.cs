@@ -9,7 +9,7 @@ namespace MineCase.Protocol.Play
 #if !NET46
     [Orleans.Concurrency.Immutable]
 #endif
-    [Packet(0x3F)]
+    [Packet(0x47)]
     public sealed class SetExperience : ISerializablePacket
     {
         [SerializeAs(DataType.Float)]
