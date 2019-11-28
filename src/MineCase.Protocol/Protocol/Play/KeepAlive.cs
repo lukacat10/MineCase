@@ -12,14 +12,14 @@ namespace MineCase.Protocol.Play
     [Packet(0x0C)]
     public sealed class ServerboundKeepAlive
     {
-        [SerializeAs(DataType.VarInt)]
-        public uint KeepAliveId;
+        [SerializeAs(DataType.Long)]
+        public long KeepAliveId;
 
         public static ServerboundKeepAlive Deserialize(ref SpanReader br)
         {
             return new ServerboundKeepAlive
             {
-                KeepAliveId = br.ReadAsVarInt(out _)
+                KeepAliveId = br.ReadAsLong()
             };
         }
     }
