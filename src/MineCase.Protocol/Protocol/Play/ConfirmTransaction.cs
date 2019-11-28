@@ -9,7 +9,7 @@ namespace MineCase.Protocol.Play
 #if !NET46
     [Orleans.Concurrency.Immutable]
 #endif
-    [Packet(0x06)]
+    [Packet(0x07)]
     public sealed class ServerboundConfirmTransaction
     {
         [SerializeAs(DataType.Byte)]
